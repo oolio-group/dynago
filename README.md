@@ -4,7 +4,7 @@
 
 ```go
 import (
-  "github.com/oolio-group/dynago/v1/dynago"
+  "github.com/oolio-group/dynago"
 )
 
 table, err := dynago.NewClient(ctx, dynago.ClientOptions{
@@ -25,7 +25,7 @@ docker run -p docker run -p 8000:8000 amazon/dynago.local
 
 ```go
 import (
-  "github.com/oolio-group/dynago/v1/dynago"
+  "github.com/oolio-group/dynago"
 )
 
 table, err := dynago.NewClient(ctx, dynamite.ClientOptions{
