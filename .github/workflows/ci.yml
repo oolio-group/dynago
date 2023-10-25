@@ -2,10 +2,8 @@ name: CI Checks
 
 on:
   merge_group:
+  push:
   pull_request:
-    types: [opened, auto_merge_enabled, unlocked, synchronize]
-    branches:
-      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
