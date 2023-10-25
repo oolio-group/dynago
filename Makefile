@@ -6,8 +6,9 @@ build:
 test:
 	mkdir -p ./coverage
 	go vet ./...
-	go test ./... -coverprofile ./coverage/profile
+	go test -v ./... -coverprofile ./coverage/profile
 	go tool cover -html ./coverage/profile -o ./coverage/index.html
+	cd tests && go test -v ./...
 
 coverage: test
 	open ./coverage/index.html

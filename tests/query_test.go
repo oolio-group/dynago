@@ -1,22 +1,23 @@
-package dynago_test
+package tests
 
 import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	dynamodb "github.com/oolio-group/dynago/v1"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/oolio-group/dynago"
+
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-func prepareTable(t *testing.T, endpoint string, name string) *dynamodb.Client {
+func prepareTable(t *testing.T, endpoint string, name string) *dynago.Client {
 	t.Helper()
-	table, err := dynamodb.NewClient(context.TODO(), dynamodb.ClientOptions{
+	table, err := dynago.NewClient(context.TODO(), dynago.ClientOptions{
 		TableName: name,
-		Endpoint: &dynamodb.EndpointResolver{
+		Endpoint: &dynago.EndpointResolver{
 			EndpointURL:     endpoint,
 			AccessKeyID:     "dummy",
 			SecretAccessKey: "dummy",
@@ -53,7 +54,7 @@ func TestQuery(t *testing.T) {
 		title       string
 		condition   string
 		keys        map[string]types.AttributeValue
-		opts        []dynamodb.QueryOptions
+		opts        []dynago.QueryOptions
 		source      []User
 		expected    []User
 		expectedErr error
@@ -64,7 +65,7 @@ func TestQuery(t *testing.T) {
 			keys: map[string]types.AttributeValue{
 				":pk": &types.AttributeValueMemberS{Value: "no records for this pk"},
 			},
-			opts:     []dynamodb.QueryOptions{},
+			opts:     []dynago.QueryOptions{},
 			source:   []User{},
 			expected: []User{},
 		},
@@ -72,7 +73,7 @@ func TestQuery(t *testing.T) {
 			title:     "error prone query",
 			condition: "pk - invalid",
 			keys:      map[string]types.AttributeValue{},
-			opts:      []dynamodb.QueryOptions{},
+			opts:      []dynago.QueryOptions{},
 			source: []User{
 				{
 					Pk: "users#org1",
@@ -88,7 +89,7 @@ func TestQuery(t *testing.T) {
 				":pk": &types.AttributeValueMemberS{Value: "users#org1"},
 				":sk": &types.AttributeValueMemberS{Value: "user#"},
 			},
-			opts: []dynamodb.QueryOptions{},
+			opts: []dynago.QueryOptions{},
 			source: []User{
 				{
 					Id: "1",
@@ -126,7 +127,7 @@ func TestQuery(t *testing.T) {
 				":pk":     &types.AttributeValueMemberS{Value: "users#query_test"},
 				":filter": &types.AttributeValueMemberS{Value: "Melbourne"},
 			},
-			opts: []dynamodb.QueryOptions{dynamodb.WithFilter("contains(#city, :filter)"), func(q *dynamodb.QueryInput) {
+			opts: []dynago.QueryOptions{dynago.WithFilter("contains(#city, :filter)"), func(q *dynago.QueryInput) {
 				q.ExpressionAttributeNames = map[string]string{
 					"#city": "City",
 				}
@@ -171,7 +172,7 @@ func TestQuery(t *testing.T) {
 			keys: map[string]types.AttributeValue{
 				":pk": &types.AttributeValueMemberS{Value: "users#limit_test"},
 			},
-			opts: []dynamodb.QueryOptions{dynamodb.WithLimit(1)},
+			opts: []dynago.QueryOptions{dynago.WithLimit(1)},
 			source: []User{
 				{
 					Pk: "users#limit_test",
@@ -200,10 +201,10 @@ func TestQuery(t *testing.T) {
 
 			// prepare the table, write test sample data
 			if len(source) > 0 {
-				items := make([]*dynamodb.TransactPutItemsInput, 0, len(source))
+				items := make([]*dynago.TransactPutItemsInput, 0, len(source))
 				for _, item := range tc.source {
-					items = append(items, &dynamodb.TransactPutItemsInput{
-						dynamodb.StringValue(item.Pk), dynamodb.StringValue(item.Sk), item,
+					items = append(items, &dynago.TransactPutItemsInput{
+						dynago.StringValue(item.Pk), dynago.StringValue(item.Sk), item,
 					})
 				}
 				err := table.TransactPutItems(ctx, items)
@@ -253,7 +254,7 @@ func TestQueryPagination(t *testing.T) {
 	const batchSize = 100
 	const batches = (3 * 1024) / batchSize
 	for batch := 0; batch < batches; batch += 1 {
-		items := make([]*dynamodb.TransactPutItemsInput, batchSize)
+		items := make([]*dynago.TransactPutItemsInput, batchSize)
 		for idx := range items {
 			// 1 KB worth data in each user record
 			record := User{
@@ -261,8 +262,8 @@ func TestQueryPagination(t *testing.T) {
 				Pk: "pk",
 				Sk: fmt.Sprintf("user-%d-%d", batch, idx),
 			}
-			items[idx] = &dynamodb.TransactPutItemsInput{
-				dynamodb.StringValue(record.Pk), dynamodb.StringValue(record.Sk), record,
+			items[idx] = &dynago.TransactPutItemsInput{
+				dynago.StringValue(record.Pk), dynago.StringValue(record.Sk), record,
 			}
 		}
 		err := table.TransactPutItems(context.TODO(), items)
@@ -316,10 +317,10 @@ func TestQueryPagination(t *testing.T) {
 			for {
 				var (
 					out  []User
-					opts = []dynamodb.QueryOptions{dynamodb.WithCursorKey(exclusiveStartKey)}
+					opts = []dynago.QueryOptions{dynago.WithCursorKey(exclusiveStartKey)}
 				)
 				if limit != 0 {
-					opts = append(opts, dynamodb.WithLimit(limit))
+					opts = append(opts, dynago.WithLimit(limit))
 				}
 
 				cursor, err := table.Query(context.TODO(), "pk = :pk", map[string]types.AttributeValue{

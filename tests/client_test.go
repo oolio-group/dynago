@@ -1,9 +1,9 @@
-package dynago_test
+package tests
 
 import (
 	"context"
 	"fmt"
-	"github.com/oolio-group/dynago/v1"
+	"github.com/oolio-group/dynago"
 	"log"
 	"testing"
 
@@ -47,6 +47,29 @@ func createTestTable(t *dynago.Client) error {
 		TableClass:  types.TableClassStandard,
 	})
 	return err
+}
+
+func TestNewClient(t *testing.T) {
+	tableName := "small-kitty-random-rbg-color"
+	table, err := dynago.NewClient(context.TODO(), dynago.ClientOptions{
+		TableName:        tableName,
+		PartitionKeyName: "pk",
+		SortKeyName:      "sk",
+		Region:           "us-east-1",
+	})
+	if err != nil {
+		t.Fatalf("expected configuration to succeed, got %s", err)
+	}
+
+	if got, wanted := table.TableName, tableName; got != wanted {
+		t.Fatalf("expected table name to be %s, got %s", wanted, got)
+	}
+	if got, wanted := table.Keys["pk"], "pk"; got != wanted {
+		t.Fatalf("expected key name to be %s, got %s", wanted, got)
+	}
+
+	// need to mock aws sdk to actually test the default connection,
+	// any real operation will create resources in aws if there is a default credential
 }
 
 func TestNewClientLocalEndpoint(t *testing.T) {

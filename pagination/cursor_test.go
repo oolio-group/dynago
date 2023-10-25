@@ -1,8 +1,8 @@
 package pagination_test
 
 import (
-	"github.com/oolio-group/dynago/v1"
-	"github.com/oolio-group/dynago/v1/pagination"
+	"github.com/oolio-group/dynago"
+	"github.com/oolio-group/dynago/pagination"
 	"reflect"
 	"strconv"
 	"testing"

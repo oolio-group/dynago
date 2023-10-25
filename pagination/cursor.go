@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	dynamodb "github.com/oolio-group/dynago/v1"
+	"github.com/oolio-group/dynago"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 )
 
-func Decode[Key any](encoded string) (map[string]dynamodb.Attribute, error) {
+func Decode[Key any](encoded string) (map[string]dynago.Attribute, error) {
 	if encoded == "" {
 		return nil, nil
 	}
@@ -23,7 +23,7 @@ func Decode[Key any](encoded string) (map[string]dynamodb.Attribute, error) {
 	return out, err
 }
 
-func Encode[Key any](attr map[string]dynamodb.Attribute) (string, error) {
+func Encode[Key any](attr map[string]dynago.Attribute) (string, error) {
 	if attr == nil {
 		return "", nil
 	}
