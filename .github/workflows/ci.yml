@@ -1,0 +1,33 @@
+name: CI Checks
+
+on:
+  merge_group:
+  pull_request:
+    types: [opened, auto_merge_enabled, unlocked, synchronize]
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_test:
+    runs-on: ubuntu-latest-4-cores
+    name: Build and test packages
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Run build
+        run: make
+
+      - name: Run Tests
+        run: make test
+
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: coverage
+          path: '**/coverage/'
+          retention-days: 14

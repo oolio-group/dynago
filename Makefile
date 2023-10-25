@@ -7,11 +7,9 @@ test:
 	mkdir -p ./coverage
 	go vet ./...
 	go test ./... -coverprofile ./coverage/profile
-
-coverage: test view_coverage
-
-view_coverage:
 	go tool cover -html ./coverage/profile -o ./coverage/index.html
+
+coverage: test
 	open ./coverage/index.html
 
 format:
