@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-func (t *Client) WithDeleteItem(ctx context.Context, pk string, sk string) types.TransactWriteItem {
+func (t *Client) WithDeleteItem(pk string, sk string) types.TransactWriteItem {
 	return types.TransactWriteItem{
 		Delete: &types.Delete{
 			TableName: &t.TableName,
@@ -22,7 +22,7 @@ func (t *Client) WithDeleteItem(ctx context.Context, pk string, sk string) types
 
 }
 
-func (t *Client) WithPutItem(ctx context.Context, pk string, sk string, item interface{}) types.TransactWriteItem {
+func (t *Client) WithPutItem(pk string, sk string, item interface{}) types.TransactWriteItem {
 	av, err := attributevalue.MarshalMap(item)
 	if err != nil {
 		log.Println("Failed to Marshal item" + err.Error())
