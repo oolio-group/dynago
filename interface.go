@@ -29,6 +29,7 @@ type WriteAPI interface {
 
 type TransactionAPI interface {
 	TransactPutItems(ctx context.Context, items []*TransactPutItemsInput) error
+	TransactItems(ctx context.Context, items []*TransactPutItemsInput) error
 }
 
 type ReadAPI interface {
