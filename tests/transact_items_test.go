@@ -41,7 +41,7 @@ func TestTransactItems(t *testing.T) {
 		},
 		newItems: []Terminal{},
 		operations: []types.TransactWriteItem{
-			table.WithPutItem("terminal1", "merchant2", Terminal{
+			table.WithPutItem("terminal1", "merchant1", Terminal{
 				Id: "1",
 				Pk: "terminal1",
 				Sk: "merchant1",
