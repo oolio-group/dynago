@@ -102,7 +102,7 @@ func TestTransactItems(t *testing.T) {
 			}
 			//perform operations
 			if len(tc.operations) > 0 {
-				err := table.TransactItems(ctx, tc.operations)
+				err := table.TransactItems(ctx, tc.operations...)
 				if err != nil {
 					t.Fatalf("error occurred %s", err)
 				}

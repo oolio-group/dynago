@@ -46,7 +46,7 @@ func (t *Client) WithPutItem(pk string, sk string, item interface{}) types.Trans
 
 // TransactItems is a synchronous for writing or deletion operation performed in dynamodb grouped together
 
-func (t *Client) TransactItems(ctx context.Context, input []types.TransactWriteItem) error {
+func (t *Client) TransactItems(ctx context.Context, input ...types.TransactWriteItem) error {
 	_, err := t.client.TransactWriteItems(ctx, &dynamodb.TransactWriteItemsInput{
 		TransactItems: input,
 	})
