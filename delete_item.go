@@ -3,7 +3,6 @@ package dynago
 import (
 	"context"
 	"log"
-	"os"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -16,11 +15,10 @@ import (
  * @return true if the record was deleted, false otherwise
 */
 func (t *Client) DeleteItem(ctx context.Context, pk string, sk string) error {
-	table := os.Getenv("DYNAMODB_TABLE")
 
 	//delete item from dynamodb
 	input := &dynamodb.DeleteItemInput{
-		TableName: &table,
+		TableName: &t.TableName,
 		Key: map[string]types.AttributeValue{
 			"pk": &types.AttributeValueMemberS{Value: pk},
 			"sk": &types.AttributeValueMemberS{Value: sk},
