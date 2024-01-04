@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/ratelimit"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -42,7 +44,12 @@ type Client struct {
 //	  Region:           "us-east-1",
 //	})
 func NewClient(ctx context.Context, opt ClientOptions) (*Client, error) {
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(opt.Region))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(opt.Region),
+		config.WithRetryer(func() aws.Retryer {
+			return retry.NewStandard(func(so *retry.StandardOptions) {
+				so.RateLimiter = ratelimit.NewTokenRateLimit(1000000)
+			})
+		}))
 
 	// if an endpoint url is provided, connect to the remote/local dynamodb instead of AWS hosted dynamodb
 	if opt.Endpoint != nil {
@@ -53,7 +60,13 @@ func NewClient(ctx context.Context, opt ClientOptions) (*Client, error) {
 					AccessKeyID:     opt.Endpoint.AccessKeyID,
 					SecretAccessKey: opt.Endpoint.SecretAccessKey,
 				},
-			}))
+			}),
+			config.WithRetryer(func() aws.Retryer {
+				return retry.NewStandard(func(so *retry.StandardOptions) {
+					so.RateLimiter = ratelimit.NewTokenRateLimit(1000000)
+				})
+			}),
+		)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to load SDK config, %w", err)
