@@ -46,10 +46,7 @@ type User struct {
 }
 
 func TestQuery(t *testing.T) {
-	endoint, purge := startLocalDatabase(t)
-	defer purge()
-
-	table := prepareTable(t, endoint, "query_test")
+	table := prepareTable(t, dynamoEndpoint, "query_test")
 	testCases := []struct {
 		title       string
 		condition   string
@@ -245,10 +242,7 @@ func genRandomBytes(t *testing.T, size int) (blk []byte) {
 }
 
 func TestQueryPagination(t *testing.T) {
-	endoint, purge := startLocalDatabase(t)
-	defer purge()
-
-	table := prepareTable(t, endoint, "query_pagination_test")
+	table := prepareTable(t, dynamoEndpoint, "query_pagination_test")
 	// write 3MB worth of sample user records to the database for testing
 	// dynamodb paginates query result by pages of 1MB recors by default.
 	const batchSize = 100
