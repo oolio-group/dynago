@@ -17,10 +17,7 @@ type Terminal struct {
 }
 
 func TestTransactItems(t *testing.T) {
-	endoint, purge := startLocalDatabase(t)
-	defer purge()
-
-	table := prepareTable(t, endoint, "transcact_item_test")
+	table := prepareTable(t, dynamoEndpoint, "transcact_item_test")
 
 	testCases := []struct {
 		title     string
