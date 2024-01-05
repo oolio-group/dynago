@@ -3,21 +3,22 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/oolio-group/dynago"
 	"log"
+	"os"
 	"testing"
+
+	"github.com/oolio-group/dynago"
+	"github.com/ory/dockertest/v3"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/ory/dockertest/v3"
 )
 
-func startLocalDatabase(t *testing.T) (addr string, purge func()) {
-	t.Helper()
+func startLocalDatabase() (addr string, purge func()) {
 	pool, err := dockertest.NewPool("")
 	if err != nil {
-		t.Fatalf("could not connect to docker: %s", err)
+		log.Fatalln("could not connect to docker", err)
 	}
 
 	resource, err := pool.Run("amazon/dynamodb-local", "latest", []string{})
@@ -27,9 +28,21 @@ func startLocalDatabase(t *testing.T) (addr string, purge func()) {
 	addr = fmt.Sprintf("http://localhost:%s", resource.GetPort("8000/tcp"))
 	return addr, func() {
 		if err := pool.Purge(resource); err != nil {
-			t.Fatalf("could not purge container: %s", err)
+			log.Println(err)
 		}
 	}
+}
+
+var dynamoEndpoint string
+
+func TestMain(m *testing.M) {
+	address, cleanup := startLocalDatabase()
+	dynamoEndpoint = address
+
+	code := m.Run()
+	// os.Exit does not respect defer
+	cleanup()
+	os.Exit(code)
 }
 
 func createTestTable(t *dynago.Client) error {
@@ -73,13 +86,10 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestNewClientLocalEndpoint(t *testing.T) {
-	endpoint, purge := startLocalDatabase(t)
-	defer purge()
-
 	table, err := dynago.NewClient(context.TODO(), dynago.ClientOptions{
 		TableName: "test",
 		Endpoint: &dynago.EndpointResolver{
-			EndpointURL:     endpoint,
+			EndpointURL:     dynamoEndpoint,
 			AccessKeyID:     "dummy",
 			SecretAccessKey: "dummy",
 		},

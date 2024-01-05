@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 type ClientOptions struct {
@@ -26,6 +27,8 @@ type Client struct {
 	TableName string
 	Keys      map[string]string
 }
+
+type TransactWriteItem types.TransactWriteItem
 
 // Create a new instance of DynamoTable. internally creates aws connection configuration for the db
 // If DynamoTable.Endpoint is specified connects to the db at the given URL, or the default credential of the system is used

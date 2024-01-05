@@ -17,10 +17,7 @@ type Terminal struct {
 }
 
 func TestTransactItems(t *testing.T) {
-	endoint, purge := startLocalDatabase(t)
-	defer purge()
-
-	table := prepareTable(t, endoint, "transcact_item_test")
+	table := prepareTable(t, dynamoEndpoint, "transcact_item_test")
 
 	testCases := []struct {
 		title     string
@@ -102,7 +99,7 @@ func TestTransactItems(t *testing.T) {
 			}
 			//perform operations
 			if len(tc.operations) > 0 {
-				err := table.TransactItems(ctx, tc.operations)
+				err := table.TransactItems(ctx, tc.operations...)
 				if err != nil {
 					t.Fatalf("error occurred %s", err)
 				}
