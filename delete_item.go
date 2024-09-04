@@ -14,20 +14,20 @@ import (
 * @param sk the sort key of the record
  * @return true if the record was deleted, false otherwise
 */
-func (t *Client) DeleteItem(ctx context.Context, pk string, sk string) error {
+func (t *Client) DeleteItem(ctx context.Context, pk Attribute, sk Attribute) error {
 
 	//delete item from dynamodb
 	input := &dynamodb.DeleteItemInput{
 		TableName: &t.TableName,
 		Key: map[string]types.AttributeValue{
-			"pk": &types.AttributeValueMemberS{Value: pk},
-			"sk": &types.AttributeValueMemberS{Value: sk},
+			"pk": pk,
+			"sk": sk,
 		},
 	}
-	resp, err := t.client.DeleteItem(ctx, input)
+	_, err := t.client.DeleteItem(ctx, input)
 
-	if err != nil && resp == nil {
-		log.Println("failed to delete record into database. Error:" + err.Error())
+	if err != nil {
+		log.Println("failed to delete record from database. Error:" + err.Error())
 		return err
 	}
 
