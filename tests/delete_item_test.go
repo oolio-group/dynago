@@ -18,43 +18,66 @@ func TestDeleteItem(t *testing.T) {
 
 	ctx := context.TODO()
 
-	// Insert a single item
-	item := user{Pk: "users#org1", Sk: "user#1"}
-	err := table.PutItem(ctx, dynago.StringValue(item.Pk), dynago.StringValue(item.Sk), item)
-	if err != nil {
-		t.Fatalf("failed to insert item; got %s", err)
+	items := []user{
+		{Pk: "users#org1", Sk: "user#1"},
+		{Pk: "users#org1", Sk: "user#2"},
+		{Pk: "users#org1", Sk: "user#3"},
 	}
 
-	// Query the item to ensure it exists
-	var output []user
-	_, err = table.Query(ctx, "pk = :pk and sk = :sk", map[string]types.AttributeValue{
-		":pk": &types.AttributeValueMemberS{Value: item.Pk},
-		":sk": &types.AttributeValueMemberS{Value: item.Sk},
-	}, &output)
-	if err != nil {
-		t.Fatalf("expected query to succeed; got %s", err)
-	}
-	if len(output) == 0 {
-		t.Fatalf("expected item to be found, but found none")
+	for _, item := range items {
+		err := table.PutItem(ctx, dynago.StringValue(item.Pk), dynago.StringValue(item.Sk), item)
+		if err != nil {
+			t.Fatalf("failed to insert item %v; got %s", item, err)
+		}
 	}
 
-	// Delete the item
-	err = table.DeleteItem(ctx, dynago.StringValue(item.Pk), dynago.StringValue(item.Sk))
-	if err != nil {
-		t.Fatalf("expected delete to succeed; got %s", err)
+	//query all items to check they exist
+	for _, item := range items {
+		var output []user
+		_, err := table.Query(ctx, "pk = :pk and sk = :sk", map[string]types.AttributeValue{
+			":pk": &types.AttributeValueMemberS{Value: item.Pk},
+			":sk": &types.AttributeValueMemberS{Value: item.Sk},
+		}, &output)
+		if err != nil {
+			t.Fatalf("expected query to succeed for item %v; got %s", item, err)
+		}
+		if len(output) == 0 {
+			t.Fatalf("expected item %v to be found, but found none", item)
+		}
 	}
 
-	// Query the item again to ensure it no longer exists
+	// delete 1st item
+	err := table.DeleteItem(ctx, dynago.StringValue(items[0].Pk), dynago.StringValue(items[0].Sk))
+	if err != nil {
+		t.Fatalf("expected delete to succeed for item %v; got %s", items[0], err)
+	}
+
+	// query first item to confirm it is deleted
 	var deleteOutput []user
 	_, err = table.Query(ctx, "pk = :pk and sk = :sk", map[string]types.AttributeValue{
-		":pk": &types.AttributeValueMemberS{Value: item.Pk},
-		":sk": &types.AttributeValueMemberS{Value: item.Sk},
+		":pk": &types.AttributeValueMemberS{Value: items[0].Pk},
+		":sk": &types.AttributeValueMemberS{Value: items[0].Sk},
 	}, &deleteOutput)
 
 	if err != nil {
-		t.Fatalf("expected query to succeed; got %s", err)
+		t.Fatalf("expected query to succeed for item %v after deletion; got %s", items[0], err)
 	}
 	if len(deleteOutput) != 0 {
-		t.Fatalf("expected item to be deleted; found %v", deleteOutput)
+		t.Fatalf("expected item %v to be deleted; found %v", items[0], deleteOutput)
+	}
+
+	// query other items to confirm they still exist
+	for i := 1; i < len(items); i++ {
+		var output []user
+		_, err := table.Query(ctx, "pk = :pk and sk = :sk", map[string]types.AttributeValue{
+			":pk": &types.AttributeValueMemberS{Value: items[i].Pk},
+			":sk": &types.AttributeValueMemberS{Value: items[i].Sk},
+		}, &output)
+		if err != nil {
+			t.Fatalf("expected query to succeed for item %v; got %s", items[i], err)
+		}
+		if len(output) == 0 {
+			t.Fatalf("expected item %v to be found, but found none", items[i])
+		}
 	}
 }
