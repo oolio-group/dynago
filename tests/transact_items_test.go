@@ -89,7 +89,7 @@ func TestTransactItems(t *testing.T) {
 				items := make([]*dynago.TransactPutItemsInput, 0, len(tc.newItems))
 				for _, item := range tc.newItems {
 					items = append(items, &dynago.TransactPutItemsInput{
-						dynago.StringValue(item.Pk), dynago.StringValue(item.Sk), item,
+						PartitionKeyValue: dynago.StringValue(item.Pk), SortKeyValue: dynago.StringValue(item.Sk), Item: item,
 					})
 				}
 				err := table.TransactPutItems(ctx, items)
@@ -98,6 +98,7 @@ func TestTransactItems(t *testing.T) {
 				}
 			}
 			//perform operations
+
 			if len(tc.operations) > 0 {
 				err := table.TransactItems(ctx, tc.operations...)
 				if err != nil {
