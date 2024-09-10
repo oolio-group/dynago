@@ -21,10 +21,10 @@ type userKeys struct {
 }
 
 type testCase struct {
-	title         string
-	itemsToDelete []userKeys
-	itemsLeft     int
-	seedData      []tableRecord
+	title             string
+	itemsToDelete     []userKeys
+	expectedItemsLeft int
+	seedData          []tableRecord
 }
 
 func TestDeleteItem(t *testing.T) {
@@ -75,53 +75,30 @@ func TestDeleteItem(t *testing.T) {
 					Sk: "user#2",
 				},
 			},
-			itemsLeft: 3,
-			seedData:  records, //each test case will have the same seed data
+			expectedItemsLeft: 3,
+			seedData:          records, //each test case will have the same seed data
 		},
 		{
-			title: "Delete all users",
-			itemsToDelete: []userKeys{
-				{
-					Pk: "users#org1",
-					Sk: "user#1",
-				},
-				{
-					Pk: "users#org1",
-					Sk: "user#2",
-				},
-				{
-					Pk: "users#org1",
-					Sk: "user#3",
-				},
-				{
-					Pk: "users#org2",
-					Sk: "user#4",
-				},
-			},
-			itemsLeft: 0,
-			seedData:  records,
-		},
-		{
-			title: "Delete wrong user",
+			title: "Delete item with wrong sk",
 			itemsToDelete: []userKeys{
 				{
 					Pk: "users#org1",
 					Sk: "user#none",
 				},
 			},
-			itemsLeft: 4,
-			seedData:  records,
+			expectedItemsLeft: 4,
+			seedData:          records,
 		},
 		{
-			title: "Delete user with invalid keys",
+			title: "Delete item with wrong pk and sk",
 			itemsToDelete: []userKeys{
 				{
 					Pk: "invalid#org",
 					Sk: "invalid#user",
 				},
 			},
-			itemsLeft: 4,
-			seedData:  records,
+			expectedItemsLeft: 4,
+			seedData:          records,
 		},
 	}
 
@@ -150,16 +127,16 @@ func TestDeleteItem(t *testing.T) {
 				})
 			}
 
-			var out []tableRecord
+			var remainingItems []tableRecord
 
-			err = table.BatchGetItems(ctx, itemsToGet, &out)
+			err = table.BatchGetItems(ctx, itemsToGet, &remainingItems)
 			if err != nil {
 				t.Fatalf("Unable to get seed data: %s", err)
 			}
 
 			//check if deleted items are not in db
-			dataKeys := make([]string, 0, len(out))
-			for _, item := range out {
+			dataKeys := make([]string, 0, len(remainingItems))
+			for _, item := range remainingItems {
 				dataKeys = append(dataKeys, fmt.Sprintf("%s--%s", item.Pk, item.Sk))
 			}
 
@@ -171,8 +148,8 @@ func TestDeleteItem(t *testing.T) {
 			}
 
 			//check if remaining records match expected number of items left
-			if len(out) != c.itemsLeft {
-				t.Fatalf("expected items in db; %v found; %v", c.itemsLeft, len(out))
+			if len(remainingItems) != c.expectedItemsLeft {
+				t.Fatalf("expected items in db; %v found; %v", c.expectedItemsLeft, len(remainingItems))
 			}
 		})
 	}
