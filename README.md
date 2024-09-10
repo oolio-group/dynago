@@ -20,7 +20,7 @@ table, err := dynago.NewClient(ctx, dynago.ClientOptions{
 ### Run dynago.locally
 
 ```sh
-docker run -p docker run -p 8000:8000 amazon/dynago.local
+docker run -p  8000:8000 amazon/dynamodb-local
 ```
 
 ```go
