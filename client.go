@@ -9,6 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
 type ClientOptions struct {
@@ -18,6 +20,7 @@ type ClientOptions struct {
 	SortKeyName      string
 	Endpoint         *EndpointResolver
 	Middlewares      []func(*aws.Config)
+	EnableTrace      bool
 }
 
 type Client struct {
@@ -57,6 +60,9 @@ func NewClient(ctx context.Context, opt ClientOptions) (*Client, error) {
 					SecretAccessKey: opt.Endpoint.SecretAccessKey,
 				},
 			}))
+	}
+	if opt.EnableTrace {
+		otelaws.AppendMiddlewares(&cfg.APIOptions)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to load SDK config, %w", err)
