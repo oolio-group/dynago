@@ -26,6 +26,7 @@ type WriteAPI interface {
 	// DynamoRecord.GetKeys will be called to get values for parition and sort keys.
 	PutItem(ctx context.Context, pk Attribute, sk Attribute, item interface{}) error
 	DeleteItem(ctx context.Context, pk string, sk string) error
+	BatchDeleteItems(ctx context.Context, input []AttributeRecord) []AttributeRecord
 }
 
 type TransactionAPI interface {
