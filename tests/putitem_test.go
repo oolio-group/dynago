@@ -139,8 +139,7 @@ func TestPutItemWithOptimisticLock(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			var try int
-			for try < 5 {
+			for {
 				err := update()
 				if err == nil {
 					return
