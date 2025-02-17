@@ -24,8 +24,8 @@ func BoolValue(v bool) *types.AttributeValueMemberBOOL {
 type WriteAPI interface {
 	// Create or update given item in DynamoDB. Must implemenmt DynamoRecord interface.
 	// DynamoRecord.GetKeys will be called to get values for parition and sort keys.
-	PutItem(ctx context.Context, pk Attribute, sk Attribute, item interface{}) error
-	DeleteItem(ctx context.Context, pk string, sk string) error
+	PutItem(ctx context.Context, pk, sk Attribute, item interface{}, opt ...PutOption) error
+	DeleteItem(ctx context.Context, pk, sk string) error
 	BatchDeleteItems(ctx context.Context, input []AttributeRecord) []AttributeRecord
 }
 
@@ -35,7 +35,7 @@ type TransactionAPI interface {
 }
 
 type ReadAPI interface {
-	GetItem(ctx context.Context, pk Attribute, sk Attribute, out interface{}) (error, bool)
+	GetItem(ctx context.Context, pk, sk Attribute, out interface{}) (error, bool)
 	BatchGetItems(ctx context.Context, input []AttributeRecord, out interface{}) error
 }
 

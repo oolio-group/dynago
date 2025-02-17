@@ -10,12 +10,37 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
+type PutOption func(*dynamodb.PutItemInput) error
+
+// Enables concurrency control by using an optimistic lock
+// https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.OptimisticLocking.html
+//
+// Provide key field acts as a version number (Usually called Version)
+// GetItem retrieves current version number and you can update the item if the version number in DynamoDB hasn't changed
+// Each update increments the version number and if the update fails fetch the record again to get latest version number and try again
+func WithOptimisticLock(key string, currentVersion uint) PutOption {
+	return func(input *dynamodb.PutItemInput) error {
+		condition := "#version = :oldVersion"
+		input.ConditionExpression = &condition
+		if input.ExpressionAttributeNames == nil {
+			input.ExpressionAttributeNames = map[string]string{}
+		}
+		if input.ExpressionAttributeValues == nil {
+			input.ExpressionAttributeValues = map[string]Attribute{}
+		}
+		input.ExpressionAttributeNames["#version"] = key
+		input.ExpressionAttributeValues[":oldVersion"] = NumberValue(int64(currentVersion))
+		input.Item[key] = NumberValue(int64(currentVersion + 1))
+		return nil
+	}
+}
+
 /**
 * Used to put and update a db record from dynamodb given a partition key and sort key
 * @param item the item put into the database
  * @return true if the record was put, false otherwise
 */
-func (t *Client) PutItem(ctx context.Context, pk Attribute, sk Attribute, item interface{}) error {
+func (t *Client) PutItem(ctx context.Context, pk, sk Attribute, item interface{}, opts ...PutOption) error {
 	av, err := attributevalue.MarshalMap(item)
 	if err != nil {
 		log.Println("Failed to Marshal item" + err.Error())
@@ -26,10 +51,18 @@ func (t *Client) PutItem(ctx context.Context, pk Attribute, sk Attribute, item i
 		av[k] = v
 	}
 
-	_, err = t.client.PutItem(ctx, &dynamodb.PutItemInput{
+	input := &dynamodb.PutItemInput{
 		TableName: &t.TableName,
 		Item:      av,
-	})
+	}
+	// Apply option functions
+	if len(opts) > 0 {
+		for _, opt := range opts {
+			opt(input)
+		}
+	}
+
+	_, err = t.client.PutItem(ctx, input)
 	if err != nil {
 		log.Println("Failed to Put item" + err.Error())
 		return err
