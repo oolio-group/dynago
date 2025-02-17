@@ -1,6 +1,8 @@
 module github.com/oolio-group/dynago
 
-go 1.21
+go 1.22
+
+toolchain go1.23
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.24.0
