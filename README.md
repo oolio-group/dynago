@@ -89,6 +89,50 @@ err := table.PutItem(
 )
 ```
 
+#### Optimistic locking with version number
+
+> Optimistic locking is a strategy to ensure that the client-side item that you are updating (or deleting) is the same as the item in Amazon DynamoDB.
+If you use this strategy, your database writes are protected from being overwritten by the writes of others, and vice versa.
+
+Use the `WithOptimisticLock` option when calling `PutItem` method.
+
+This works well and is recommended when using the event sourcing pattern where you need to update aggregate snapshots.
+You can make use of event broker retry mechanism or retry libraries to simplify retry
+
+**Example**
+
+```go
+type LedgerAccount struct {
+	ID      string
+	Balance int
+	Version uint
+}
+
+func AddBalance(ctx context.Context, acc LedgerAccount, amount int) (err error) {
+	var try int
+	for try <= maxTries {
+		var acc LedgerAccount
+		err, _ := table.GetItem(ctx, pk, pk, &acc)
+		if err != nil {
+			return err
+		}
+
+		// Add amount to current account balance
+		acc.Balance += amount
+
+		// If another go routine updates account using AddBalance we want to avoid overwriting using an old balance
+		err = table.PutItem(ctx, pk, pk, acc, dynago.WithOptimisticLock("Version", acc.Version))
+		if err == nil {
+			return nil
+		}
+		// Retry if there is an error with latest item value from DynamoDB
+		try += 1
+	}
+
+	return err
+}
+```
+
 ### Query
 
 ```go
