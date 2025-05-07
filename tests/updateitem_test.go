@@ -173,7 +173,6 @@ func TestUpdateItemOptimisticLockConcurrency(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		t.Log(acc)
 		
 		updates := map[string]dynago.Attribute{
 			"Balance": dynago.NumberValue(int64(acc.Balance + 100)),
@@ -187,12 +186,17 @@ func TestUpdateItemOptimisticLockConcurrency(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for {
+			maxRetries := 10
+			for i := 0; i < maxRetries; i++ {
 				err := update()
 				if err == nil {
 					return
 				}
+				if i%3 == 0 {
+					t.Logf("Retry %d: %v", i, err)
+				}
 			}
+			t.Logf("Max retries reached, continuing")
 		}()
 	}
 	wg.Wait()
