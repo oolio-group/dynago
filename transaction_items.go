@@ -85,7 +85,6 @@ func (t *Client) WithUpdateItem(pk string, sk string, updates map[string]Attribu
 	for _, opt := range opts {
 		err := opt(input)
 		if err != nil {
-			log.Println("Failed to apply update option: " + err.Error())
 			return types.TransactWriteItem{}
 		}
 	}
