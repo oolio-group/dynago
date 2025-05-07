@@ -81,7 +81,7 @@ func TestTransactItems(t *testing.T) {
 		},
 		{
 			title:     "update multiple items with WithUpdateItem",
-			condition: "pk IN (:pk1, :pk2)",
+			condition: "pk = :pk1 OR pk = :pk2",
 			keys: map[string]types.AttributeValue{
 				":pk1": &types.AttributeValueMemberS{Value: "terminal2"},
 				":pk2": &types.AttributeValueMemberS{Value: "terminal3"},
