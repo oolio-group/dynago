@@ -6,7 +6,9 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/oolio-group/dynago"
 )
@@ -181,19 +183,24 @@ func TestUpdateItemOptimisticLockConcurrency(t *testing.T) {
 	}
 	
 	var wg sync.WaitGroup
+	successCount := int32(0)
 	for range 10 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			maxRetries := 10
+			maxRetries := 5
 			for i := 0; i < maxRetries; i++ {
 				err := update()
 				if err == nil {
+					atomic.AddInt32(&successCount, 1)
 					return
 				}
-				if i%3 == 0 {
-					t.Logf("Retry %d: %v", i, err)
+				if strings.Contains(err.Error(), "ConditionalCheckFailedException") {
+					time.Sleep(50 * time.Millisecond) // Small delay before retry
+					continue
 				}
+				t.Errorf("Unexpected error: %v", err)
+				return
 			}
 			t.Logf("Max retries reached, continuing")
 		}()
