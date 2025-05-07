@@ -79,6 +79,46 @@ func TestTransactItems(t *testing.T) {
 				},
 			},
 		},
+		{
+			title:     "update multiple items with WithUpdateItem",
+			condition: "pk IN (:pk1, :pk2)",
+			keys: map[string]types.AttributeValue{
+				":pk1": &types.AttributeValueMemberS{Value: "terminal2"},
+				":pk2": &types.AttributeValueMemberS{Value: "terminal3"},
+			},
+			newItems: []Terminal{
+				{
+					Id: "2",
+					Pk: "terminal2",
+					Sk: "merchant1",
+				},
+				{
+					Id: "3",
+					Pk: "terminal3",
+					Sk: "merchant1",
+				},
+			},
+			operations: []types.TransactWriteItem{
+				table.WithUpdateItem("terminal2", "merchant1", map[string]dynago.Attribute{
+					"Id": dynago.StringValue("2-updated"),
+				}),
+				table.WithUpdateItem("terminal3", "merchant1", map[string]dynago.Attribute{
+					"Id": dynago.StringValue("3-updated"),
+				}),
+			},
+			expected: []Terminal{
+				{
+					Id: "2-updated",
+					Pk: "terminal2",
+					Sk: "merchant1",
+				},
+				{
+					Id: "3-updated",
+					Pk: "terminal3",
+					Sk: "merchant1",
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
