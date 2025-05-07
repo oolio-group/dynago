@@ -8,7 +8,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/oolio-group/dynago"
 )
 
