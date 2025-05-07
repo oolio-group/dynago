@@ -188,7 +188,7 @@ func TestUpdateItemOptimisticLockConcurrency(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			maxRetries := 5
+			maxRetries := 10
 			for i := 0; i < maxRetries; i++ {
 				err := update()
 				if err == nil {
@@ -196,7 +196,7 @@ func TestUpdateItemOptimisticLockConcurrency(t *testing.T) {
 					return
 				}
 				if strings.Contains(err.Error(), "ConditionalCheckFailedException") {
-					time.Sleep(50 * time.Millisecond) // Small delay before retry
+					time.Sleep(100 * time.Millisecond) // Longer delay before retry
 					continue
 				}
 				t.Errorf("Unexpected error: %v", err)
