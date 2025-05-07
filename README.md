@@ -176,7 +176,7 @@ if cursor != nil {
 }
 ```
 
-## Running Tets
+## Running Tests
 
 By default, tests are run in offline mode. Using https://github.com/ory/dockertest, ephermal amazon/dynago.local containers are created for tests.
 
