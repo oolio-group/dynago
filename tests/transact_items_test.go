@@ -81,41 +81,41 @@ func TestTransactItems(t *testing.T) {
 		},
 		{
 			title:     "update multiple items with WithUpdateItem",
-			condition: "pk = :pk1 OR pk = :pk2",
+			condition: "pk = :pk AND begins_with(sk, :sk)",
 			keys: map[string]types.AttributeValue{
-				":pk1": &types.AttributeValueMemberS{Value: "terminal2"},
-				":pk2": &types.AttributeValueMemberS{Value: "terminal3"},
+				":pk": &types.AttributeValueMemberS{Value: "terminal"},
+				":sk": &types.AttributeValueMemberS{Value: "merchant"},
 			},
 			newItems: []Terminal{
 				{
 					Id: "2",
-					Pk: "terminal2",
+					Pk: "terminal",
 					Sk: "merchant1",
 				},
 				{
 					Id: "3",
-					Pk: "terminal3",
-					Sk: "merchant1",
+					Pk: "terminal",
+					Sk: "merchant2",
 				},
 			},
 			operations: []types.TransactWriteItem{
-				table.WithUpdateItem("terminal2", "merchant1", map[string]dynago.Attribute{
+				table.WithUpdateItem("terminal", "merchant1", map[string]dynago.Attribute{
 					"Id": dynago.StringValue("2-updated"),
 				}),
-				table.WithUpdateItem("terminal3", "merchant1", map[string]dynago.Attribute{
+				table.WithUpdateItem("terminal", "merchant2", map[string]dynago.Attribute{
 					"Id": dynago.StringValue("3-updated"),
 				}),
 			},
 			expected: []Terminal{
 				{
 					Id: "2-updated",
-					Pk: "terminal2",
+					Pk: "terminal",
 					Sk: "merchant1",
 				},
 				{
 					Id: "3-updated",
-					Pk: "terminal3",
-					Sk: "merchant1",
+					Pk: "terminal",
+					Sk: "merchant2",
 				},
 			},
 		},
