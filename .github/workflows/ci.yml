@@ -3,26 +3,33 @@ name: CI Checks
 on:
   merge_group:
   push:
+    branches:
+      - 'main'
   pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build_test:
     runs-on: ubuntu-latest
     name: Build and test packages
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: oolio-group/install-nix-action@master
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          nix_path: nixpkgs=channel:nixos-unstable
       - name: Run build
-        run: make
-
+        run: nix develop --command make
       - name: Run Tests
-        run: make test
-
+        run: nix develop --command make test
       - uses: actions/upload-artifact@v4
         if: always()
         with:
