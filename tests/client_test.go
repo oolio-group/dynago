@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/oolio-group/dynago"
 	"github.com/ory/dockertest/v3"
@@ -101,8 +102,18 @@ func TestNewClientLocalEndpoint(t *testing.T) {
 		t.Fatalf("expected configuration to succeed, got %s", err)
 	}
 
-	err = createTestTable(table)
-	if err != nil {
-		t.Fatalf("expected create table on local table to succeed, got %s", err)
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		err = createTestTable(table)
+		if err == nil {
+			break
+		}
+		
+		if i == maxRetries-1 {
+			t.Fatalf("failed to create table after %d attempts: %s", maxRetries, err)
+		}
+		
+		t.Logf("Table creation attempt %d failed: %s. Retrying after 1 second...", i+1, err)
+		time.Sleep(1 * time.Second)
 	}
 }
