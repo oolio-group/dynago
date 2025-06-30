@@ -109,15 +109,8 @@ type LedgerAccount struct {
 
 func TestPutItemWithOptimisticLock(t *testing.T) {
 	table := prepareTable(t, dynamoEndpoint, "put_optimistic_test")
-	// Create new account item in DynamoDB with default values
-	account := LedgerAccount{ID: "123"}
 	ctx := context.Background()
 	pk := dynago.StringValue("123")
-	err := table.PutItem(ctx, pk, pk, account)
-	if err != nil {
-		t.Fatalf("unexpected error %s", err)
-		return
-	}
 
 	// Update method will add 100 to the current account balance
 	update := func() error {
@@ -151,7 +144,7 @@ func TestPutItemWithOptimisticLock(t *testing.T) {
 	// We expect account balance to be 1000 after 10 update
 	// If any update method overwrote with an outdated value then total balance will be less than 1000
 	var acc LedgerAccount
-	err, _ = table.GetItem(ctx, pk, pk, &acc)
+	err, _ := table.GetItem(ctx, pk, pk, &acc)
 	if err != nil {
 		t.Fatalf("unexpected error %s", err)
 		return
