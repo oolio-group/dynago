@@ -20,7 +20,8 @@ type PutOption func(*dynamodb.PutItemInput) error
 // Each update increments the version number and if the update fails fetch the record again to get latest version number and try again
 func WithOptimisticLock(key string, currentVersion uint) PutOption {
 	return func(input *dynamodb.PutItemInput) error {
-		condition := "#version = :oldVersion"
+		// Ensure the condition expression is set to check if the version attribute does not exist or matches the old version
+		condition := "attribute_not_exists(#version) or #version = :oldVersion"
 		input.ConditionExpression = &condition
 		if input.ExpressionAttributeNames == nil {
 			input.ExpressionAttributeNames = map[string]string{}
