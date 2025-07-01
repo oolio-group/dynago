@@ -27,6 +27,7 @@ type WriteAPI interface {
 	PutItem(ctx context.Context, pk, sk Attribute, item interface{}, opt ...PutOption) error
 	DeleteItem(ctx context.Context, pk, sk string) error
 	BatchDeleteItems(ctx context.Context, input []AttributeRecord) []AttributeRecord
+	UpdateItem(ctx context.Context, pk, sk Attribute, fields map[string]Attribute, opt ...UpdateOption) error
 }
 
 type TransactionAPI interface {
