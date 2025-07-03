@@ -35,6 +35,9 @@ func (db *TestDatabase) ready() error {
 	if res == nil {
 		return fmt.Errorf("database is not ready")
 	}
+	defer res.Body.Close()
+	// Status code will be 400. Regular requests are not supported
+	// We may add more checks here in the future
 	return nil
 }
 
