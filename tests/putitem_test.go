@@ -70,7 +70,7 @@ func TestPutItem(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
-			t.Helper()
+			t.Parallel()
 			ctx := context.TODO()
 
 			pk := dynago.StringValue(tc.item.Pk)

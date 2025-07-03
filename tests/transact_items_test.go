@@ -33,21 +33,21 @@ func TestTransactItems(t *testing.T) {
 		title:     "assign terminal - only add a terminal",
 		condition: "pk = :pk",
 		keys: map[string]types.AttributeValue{
-			":pk": &types.AttributeValueMemberS{Value: "terminal1"},
+			":pk": &types.AttributeValueMemberS{Value: "merchant1"},
 		},
 		newItems: []Terminal{},
 		operations: []types.TransactWriteItem{
-			table.WithPutItem("terminal1", "merchant1", Terminal{
+			table.WithPutItem("merchant1", "terminal1", Terminal{
 				Id: "1",
-				Pk: "terminal1",
-				Sk: "merchant1",
+				Pk: "merchant1",
+				Sk: "terminal1",
 			}),
 		},
 		expected: []Terminal{
 			{
 				Id: "1",
-				Pk: "terminal1",
-				Sk: "merchant1",
+				Pk: "merchant1",
+				Sk: "terminal1",
 			},
 		},
 	},
@@ -55,33 +55,33 @@ func TestTransactItems(t *testing.T) {
 			title:     "assign terminal - delete existing and update with new",
 			condition: "pk = :pk",
 			keys: map[string]types.AttributeValue{
-				":pk": &types.AttributeValueMemberS{Value: "terminal1"},
+				":pk": &types.AttributeValueMemberS{Value: "merchant2"},
 			},
 			newItems: []Terminal{{
 				Id: "1",
-				Pk: "terminal1",
-				Sk: "merchant2",
+				Pk: "merchant2",
+				Sk: "terminal1",
 			}},
 			operations: []types.TransactWriteItem{
-				table.WithDeleteItem("terminal1", "merchant1"),
-				table.WithPutItem("terminal1", "merchant2", Terminal{
-					Id: "1",
-					Pk: "terminal1",
-					Sk: "merchant2",
+				table.WithDeleteItem("merchant2", "terminal1"),
+				table.WithPutItem("merchant2", "terminal2", Terminal{
+					Id: "2",
+					Pk: "merchant2",
+					Sk: "terminal2",
 				}),
 			},
 			expected: []Terminal{
 				{
-					Id: "1",
-					Pk: "terminal1",
-					Sk: "merchant2",
+					Id: "2",
+					Pk: "merchant2",
+					Sk: "terminal2",
 				},
 			},
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
-			t.Helper()
+			t.Parallel()
 			ctx := context.TODO()
 			// Create Item
 			if len(tc.newItems) > 0 {
@@ -126,7 +126,6 @@ func TestTransactItems(t *testing.T) {
 			}
 
 		})
-
 	}
 
 }

@@ -57,7 +57,6 @@ type User struct {
 }
 
 func TestQuery(t *testing.T) {
-	table := prepareTable(t)
 	testCases := []struct {
 		title       string
 		condition   string
@@ -201,10 +200,11 @@ func TestQuery(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		condition, keys, opts, source, expected := tc.condition, tc.keys, tc.opts, tc.source, tc.expected
 		t.Run(tc.title, func(t *testing.T) {
-			t.Helper()
+			t.Parallel()
 
+			table := prepareTable(t)
+			condition, keys, opts, source, expected := tc.condition, tc.keys, tc.opts, tc.source, tc.expected
 			ctx := context.TODO()
 
 			// prepare the table, write test sample data
@@ -315,9 +315,9 @@ func TestQueryPagination(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		limit, paginate, expected := tc.limit, tc.paginate, tc.expected
 		t.Run(tc.title, func(t *testing.T) {
-			t.Helper()
+			t.Parallel()
+			limit, paginate, expected := tc.limit, tc.paginate, tc.expected
 			var (
 				results           = make([]User, 0, expected*2)
 				exclusiveStartKey map[string]types.AttributeValue
@@ -364,5 +364,3 @@ func TestQueryPagination(t *testing.T) {
 		})
 	}
 }
-
-// FIXME: add a TestMain to initialize test db to speed up and reduce test db instances spun up
