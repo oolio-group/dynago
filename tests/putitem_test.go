@@ -18,7 +18,7 @@ type Record struct {
 }
 
 func TestPutItem(t *testing.T) {
-	table := prepareTable(t, dynamoEndpoint, "put_test")
+	table := prepareTable(t)
 	testCases := []struct {
 		title       string
 		item        Record
@@ -108,7 +108,7 @@ type LedgerAccount struct {
 }
 
 func TestPutItemWithOptimisticLock(t *testing.T) {
-	table := prepareTable(t, dynamoEndpoint, "put_optimistic_test")
+	table := prepareTable(t)
 	ctx := context.Background()
 	pk := dynago.StringValue("123")
 

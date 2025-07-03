@@ -17,8 +17,7 @@ type Terminal struct {
 }
 
 func TestTransactItems(t *testing.T) {
-	table := prepareTable(t, dynamoEndpoint, "transcact_item_test")
-
+	table := prepareTable(t)
 	testCases := []struct {
 		title     string
 		condition string
@@ -89,7 +88,9 @@ func TestTransactItems(t *testing.T) {
 				items := make([]*dynago.TransactPutItemsInput, 0, len(tc.newItems))
 				for _, item := range tc.newItems {
 					items = append(items, &dynago.TransactPutItemsInput{
-						dynago.StringValue(item.Pk), dynago.StringValue(item.Sk), item,
+						PartitionKeyValue: dynago.StringValue(item.Pk),
+						SortKeyValue:      dynago.StringValue(item.Sk),
+						Item:              item,
 					})
 				}
 				err := table.TransactPutItems(ctx, items)
