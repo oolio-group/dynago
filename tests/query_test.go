@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"reflect"
 	"strings"
@@ -13,12 +14,22 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-func prepareTable(t *testing.T, endpoint string, name string) *dynago.Client {
+// getRandomTableName generates a unique random table name for testing purposes.
+// This helps avoid table name conflicts when running tests in parallel.
+// The returned name is prefixed with "test-table-" followed by a random hex string.
+func getRandomTableName(t *testing.T) string {
 	t.Helper()
-	table, err := dynago.NewClient(context.TODO(), dynago.ClientOptions{
+	return "test-table-" + hex.EncodeToString(genRandomBytes(t, 6))
+}
+
+func prepareTable(t *testing.T) *dynago.Client {
+	t.Helper()
+	ctx := context.TODO()
+	name := getRandomTableName(t)
+	table, err := dynago.NewClient(ctx, dynago.ClientOptions{
 		TableName: name,
 		Endpoint: &dynago.EndpointResolver{
-			EndpointURL:     endpoint,
+			EndpointURL:     testdb.Endpoint(),
 			AccessKeyID:     "dummy",
 			SecretAccessKey: "dummy",
 		},
@@ -29,7 +40,7 @@ func prepareTable(t *testing.T, endpoint string, name string) *dynago.Client {
 	if err != nil {
 		t.Fatalf("expected configuration to succeed, got %s", err)
 	}
-	err = createTestTable(table)
+	err = testdb.CreateTable(ctx, name, "pk", "sk")
 	if err != nil {
 		t.Fatalf("expected table creation to succeed, got %s", err)
 	}
@@ -46,7 +57,6 @@ type User struct {
 }
 
 func TestQuery(t *testing.T) {
-	table := prepareTable(t, dynamoEndpoint, "query_test")
 	testCases := []struct {
 		title       string
 		condition   string
@@ -190,10 +200,11 @@ func TestQuery(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		condition, keys, opts, source, expected := tc.condition, tc.keys, tc.opts, tc.source, tc.expected
 		t.Run(tc.title, func(t *testing.T) {
-			t.Helper()
+			t.Parallel()
 
+			table := prepareTable(t)
+			condition, keys, opts, source, expected := tc.condition, tc.keys, tc.opts, tc.source, tc.expected
 			ctx := context.TODO()
 
 			// prepare the table, write test sample data
@@ -201,7 +212,9 @@ func TestQuery(t *testing.T) {
 				items := make([]*dynago.TransactPutItemsInput, 0, len(source))
 				for _, item := range tc.source {
 					items = append(items, &dynago.TransactPutItemsInput{
-						dynago.StringValue(item.Pk), dynago.StringValue(item.Sk), item,
+						PartitionKeyValue: dynago.StringValue(item.Pk),
+						SortKeyValue:      dynago.StringValue(item.Sk),
+						Item:              item,
 					})
 				}
 				err := table.TransactPutItems(ctx, items)
@@ -242,7 +255,7 @@ func genRandomBytes(t *testing.T, size int) (blk []byte) {
 }
 
 func TestQueryPagination(t *testing.T) {
-	table := prepareTable(t, dynamoEndpoint, "query_pagination_test")
+	table := prepareTable(t)
 	// write 3MB worth of sample user records to the database for testing
 	// dynamodb paginates query result by pages of 1MB recors by default.
 	const batchSize = 100
@@ -257,7 +270,9 @@ func TestQueryPagination(t *testing.T) {
 				Sk: fmt.Sprintf("user-%d-%d", batch, idx),
 			}
 			items[idx] = &dynago.TransactPutItemsInput{
-				dynago.StringValue(record.Pk), dynago.StringValue(record.Sk), record,
+				PartitionKeyValue: dynago.StringValue(record.Pk),
+				SortKeyValue:      dynago.StringValue(record.Sk),
+				Item:              record,
 			}
 		}
 		err := table.TransactPutItems(context.TODO(), items)
@@ -300,9 +315,9 @@ func TestQueryPagination(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		limit, paginate, expected := tc.limit, tc.paginate, tc.expected
 		t.Run(tc.title, func(t *testing.T) {
-			t.Helper()
+			t.Parallel()
+			limit, paginate, expected := tc.limit, tc.paginate, tc.expected
 			var (
 				results           = make([]User, 0, expected*2)
 				exclusiveStartKey map[string]types.AttributeValue
@@ -349,5 +364,3 @@ func TestQueryPagination(t *testing.T) {
 		})
 	}
 }
-
-// FIXME: add a TestMain to initialize test db to speed up and reduce test db instances spun up

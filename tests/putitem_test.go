@@ -18,7 +18,7 @@ type Record struct {
 }
 
 func TestPutItem(t *testing.T) {
-	table := prepareTable(t, dynamoEndpoint, "put_test")
+	table := prepareTable(t)
 	testCases := []struct {
 		title       string
 		item        Record
@@ -70,7 +70,7 @@ func TestPutItem(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
-			t.Helper()
+			t.Parallel()
 			ctx := context.TODO()
 
 			pk := dynago.StringValue(tc.item.Pk)
@@ -108,7 +108,7 @@ type LedgerAccount struct {
 }
 
 func TestPutItemWithOptimisticLock(t *testing.T) {
-	table := prepareTable(t, dynamoEndpoint, "put_optimistic_test")
+	table := prepareTable(t)
 	ctx := context.Background()
 	pk := dynago.StringValue("123")
 
