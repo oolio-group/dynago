@@ -25,6 +25,8 @@ type WriteAPI interface {
 	// Create or update given item in DynamoDB. Must implemenmt DynamoRecord interface.
 	// DynamoRecord.GetKeys will be called to get values for parition and sort keys.
 	PutItem(ctx context.Context, pk, sk Attribute, item interface{}, opt ...PutOption) error
+	// Update specified fields on a DynamoDB record
+	UpdateItem(ctx context.Context, pk, sk Attribute, fields interface{}, opts ...UpdateOption) error
 	DeleteItem(ctx context.Context, pk, sk string) error
 	BatchDeleteItems(ctx context.Context, input []AttributeRecord) []AttributeRecord
 }
