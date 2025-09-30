@@ -129,3 +129,126 @@ func TestTransactItems(t *testing.T) {
 	}
 
 }
+
+func TestTransactItemsWithUpdate(t *testing.T) {
+	table := prepareTable(t)
+	testCases := []struct {
+		title       string
+		condition   string
+		keys        map[string]types.AttributeValue
+		// items to be added initially
+		initialItems []Terminal
+		operations   []types.TransactWriteItem
+		// items expected to exist in table after transaction operation
+		expected    []Terminal
+		expectedErr error
+	}{{
+		title:     "transaction with update operation",
+		condition: "pk = :pk",
+		keys: map[string]types.AttributeValue{
+			":pk": &types.AttributeValueMemberS{Value: "merchant3"},
+		},
+		initialItems: []Terminal{{
+			Id: "1",
+			Pk: "merchant3",
+			Sk: "terminal1",
+		}},
+		operations: []types.TransactWriteItem{
+			table.WithUpdateItem("merchant3", "terminal1", map[string]interface{}{
+				"Id": "updated_id",
+			}),
+		},
+		expected: []Terminal{
+			{
+				Id: "updated_id",
+				Pk: "merchant3",
+				Sk: "terminal1",
+			},
+		},
+	},
+		{
+			title:     "transaction with mixed operations including update",
+			condition: "pk = :pk",
+			keys: map[string]types.AttributeValue{
+				":pk": &types.AttributeValueMemberS{Value: "merchant4"},
+			},
+			initialItems: []Terminal{{
+				Id: "1",
+				Pk: "merchant4",
+				Sk: "terminal1",
+			}},
+			operations: []types.TransactWriteItem{
+				table.WithUpdateItem("merchant4", "terminal1", map[string]interface{}{
+					"Id": "updated_terminal1",
+				}),
+				table.WithPutItem("merchant4", "terminal2", Terminal{
+					Id: "2",
+					Pk: "merchant4",
+					Sk: "terminal2",
+				}),
+			},
+			expected: []Terminal{
+				{
+					Id: "updated_terminal1",
+					Pk: "merchant4",
+					Sk: "terminal1",
+				},
+				{
+					Id: "2",
+					Pk: "merchant4",
+					Sk: "terminal2",
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.title, func(t *testing.T) {
+			t.Parallel()
+			ctx := context.TODO()
+
+			// Create initial items
+			if len(tc.initialItems) > 0 {
+				items := make([]*dynago.TransactPutItemsInput, 0, len(tc.initialItems))
+				for _, item := range tc.initialItems {
+					items = append(items, &dynago.TransactPutItemsInput{
+						PartitionKeyValue: dynago.StringValue(item.Pk),
+						SortKeyValue:      dynago.StringValue(item.Sk),
+						Item:              item,
+					})
+				}
+				err := table.TransactPutItems(ctx, items)
+				if err != nil {
+					t.Fatalf("transaction put items failed; got %s", err)
+				}
+			}
+
+			// Perform operations
+			if len(tc.operations) > 0 {
+				err := table.TransactItems(ctx, tc.operations...)
+				if err != nil {
+					t.Fatalf("error occurred %s", err)
+				}
+			}
+
+			var out []Terminal
+			_, err := table.Query(ctx, tc.condition, tc.keys, &out)
+			if tc.expectedErr != nil {
+				if err == nil {
+					t.Fatalf("expected query to fail with %s", tc.expectedErr)
+				}
+				if !strings.Contains(err.Error(), tc.expectedErr.Error()) {
+					t.Fatalf("expected query to fail with %s; got %s", tc.expectedErr, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("expected query to succeed; got %s", err)
+			}
+			if !reflect.DeepEqual(tc.expected, out) {
+				t.Errorf("expected query to return %v; got %v", tc.expected, out)
+			}
+
+		})
+	}
+}
