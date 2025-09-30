@@ -112,7 +112,7 @@ func TestUpdateItem(t *testing.T) {
 				"Name": "David Wilson",
 			},
 			opts: []dynago.UpdateOption{
-				dynago.WithOptimisticLockForUpdate("version", 1),
+				dynago.WithOptimisticLockForUpdate("Version", 1),
 			},
 			expected: UpdateRecord{
 				ID:      "test4",
@@ -140,7 +140,7 @@ func TestUpdateItem(t *testing.T) {
 					"attribute_exists(#name)", 
 					map[string]dynago.Attribute{},
 					map[string]string{
-						"#name": "name",
+						"#name": "Name", // Use the correct field name that exists in the struct
 					},
 				),
 			},
@@ -225,7 +225,7 @@ func TestUpdateItemCustomExpression(t *testing.T) {
 			":increment": dynago.NumberValue(5),
 		},
 		map[string]string{
-			"#age": "age",
+			"#age": "Age", // Use the actual struct field name
 		},
 	))
 	if err != nil {

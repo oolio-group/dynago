@@ -51,21 +51,23 @@ func WithOptimisticLockForUpdate(key string, currentVersion uint) UpdateOption {
 		
 		input.ExpressionAttributeNames["#version"] = key
 		input.ExpressionAttributeValues[":oldVersion"] = NumberValue(int64(currentVersion))
-		
-		// Add version increment to update expression
-		versionUpdate := fmt.Sprintf("#version = :newVersion")
 		input.ExpressionAttributeValues[":newVersion"] = NumberValue(int64(currentVersion + 1))
 		
-		if input.UpdateExpression == nil {
-			input.UpdateExpression = &versionUpdate
+		// Add version increment to update expression
+		versionUpdate := "#version = :newVersion"
+		
+		if input.UpdateExpression == nil || *input.UpdateExpression == "" {
+			// If no existing expression, create a new SET expression
+			expr := fmt.Sprintf("SET %s", versionUpdate)
+			input.UpdateExpression = &expr
 		} else {
 			existingExpr := *input.UpdateExpression
-			if strings.Contains(existingExpr, "SET") {
+			if strings.Contains(strings.ToUpper(existingExpr), "SET") {
 				// Add to existing SET clause
 				newExpr := strings.Replace(existingExpr, "SET ", fmt.Sprintf("SET %s, ", versionUpdate), 1)
 				input.UpdateExpression = &newExpr
 			} else {
-				// Prepend SET clause
+				// Prepend SET clause to other operations
 				newExpr := fmt.Sprintf("SET %s %s", versionUpdate, existingExpr)
 				input.UpdateExpression = &newExpr
 			}
@@ -102,23 +104,35 @@ func WithUpdateExpression(expression string, values map[string]Attribute, names 
 
 // UpdateItem updates specified fields on a DynamoDB record
 // fields parameter should be a struct or map with fields to update
+// If fields is nil, only custom expressions from options will be applied
 func (t *Client) UpdateItem(ctx context.Context, pk, sk Attribute, fields interface{}, opts ...UpdateOption) error {
-	// Generate update expression from fields
-	updateExpr, attrValues, attrNames, err := t.generateUpdateExpression(fields)
-	if err != nil {
-		return fmt.Errorf("failed to generate update expression: %w", err)
-	}
+	var updateExpr string
+	var attrValues map[string]Attribute
+	var attrNames map[string]string
+	var err error
 	
-	if updateExpr == "" {
-		return fmt.Errorf("no fields to update")
+	// Generate update expression from fields if provided
+	if fields != nil {
+		updateExpr, attrValues, attrNames, err = t.generateUpdateExpression(fields)
+		if err != nil {
+			return fmt.Errorf("failed to generate update expression: %w", err)
+		}
+	} else {
+		// Initialize empty maps if no fields provided
+		attrValues = make(map[string]Attribute)
+		attrNames = make(map[string]string)
 	}
 	
 	input := &dynamodb.UpdateItemInput{
 		TableName:                 &t.TableName,
 		Key:                       t.NewKeys(pk, sk),
-		UpdateExpression:          &updateExpr,
 		ExpressionAttributeValues: attrValues,
 		ExpressionAttributeNames:  attrNames,
+	}
+	
+	// Set update expression if we have one from fields
+	if updateExpr != "" {
+		input.UpdateExpression = &updateExpr
 	}
 	
 	// Apply option functions
@@ -126,6 +140,11 @@ func (t *Client) UpdateItem(ctx context.Context, pk, sk Attribute, fields interf
 		if err := opt(input); err != nil {
 			return fmt.Errorf("failed to apply update option: %w", err)
 		}
+	}
+	
+	// Check if we have any update expression after applying options
+	if input.UpdateExpression == nil || *input.UpdateExpression == "" {
+		return fmt.Errorf("no update expression provided")
 	}
 	
 	_, err = t.client.UpdateItem(ctx, input)
@@ -177,7 +196,7 @@ func (t *Client) generateUpdateExpression(fields interface{}) (string, map[strin
 	}
 	
 	if len(setParts) == 0 {
-		return "", nil, nil, fmt.Errorf("no valid fields to update")
+		return "", nil, nil, fmt.Errorf("no valid fields to update (only primary keys provided)")
 	}
 	
 	updateExpr := fmt.Sprintf("SET %s", strings.Join(setParts, ", "))
