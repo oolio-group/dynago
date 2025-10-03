@@ -35,7 +35,7 @@ type TransactionAPI interface {
 }
 
 type ReadAPI interface {
-	GetItem(ctx context.Context, pk, sk Attribute, out interface{}) (error, bool)
+	GetItem(ctx context.Context, pk, sk Attribute, out interface{}, opts ...GetItemOptions) (error, bool)
 	BatchGetItems(ctx context.Context, input []AttributeRecord, out interface{}) error
 }
 
