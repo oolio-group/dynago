@@ -27,10 +27,10 @@ type BatchPutItemsInput struct {
  */
 func (t *Client) BatchPutItems(ctx context.Context, inputs []BatchPutItemsInput) error {
 	items := make([]types.WriteRequest, 0, len(inputs))
+	table := t.TableName
 
 	for _, input := range inputs {
 		item, err := attributevalue.MarshalMap(input.Item)
-		table := t.TableName
 		if err != nil {
 			return fmt.Errorf("failed to marshall item; %s", err)
 		}
