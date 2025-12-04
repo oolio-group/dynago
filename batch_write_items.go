@@ -18,22 +18,32 @@ type BatchPutItemsInput struct {
 }
 
 /**
-* Used to update records to  dynamodb
-* @param input slice of record want to  put to DB
-* @return error
+ * BatchPutItems writes multiple items to DynamoDB in batches.
+ * Items are automatically chunked into groups of 25 (DynamoDB's batch limit).
+ * Each item is marshaled and partition/sort keys are added before writing.
+ * @param ctx context for the operation
+ * @param inputs slice of items to put into DynamoDB
+ * @return error if operation fails
  */
+func (t *Client) BatchPutItems(ctx context.Context, inputs []BatchPutItemsInput) error {
+	items := make([]types.WriteRequest, 0, len(inputs))
 
-func (t *Client) BatchWriteItems(ctx context.Context, input []map[string]types.AttributeValue) error {
-	items := make([]types.WriteRequest, 0, len(input))
-	table := t.TableName
-	for _, model := range input {
-		items = append(items,
-			types.WriteRequest{
-				PutRequest: &types.PutRequest{
-					Item: model,
-				},
+	for _, input := range inputs {
+		item, err := attributevalue.MarshalMap(input.Item)
+		table := t.TableName
+		if err != nil {
+			return fmt.Errorf("failed to marshall item; %s", err)
+		}
+
+		for k, v := range t.NewKeys(input.PartitionKeyValue, input.SortKeyValue) {
+			item[k] = v
+		}
+
+		items = append(items, types.WriteRequest{
+			PutRequest: &types.PutRequest{
+				Item: item,
 			},
-		)
+		})
 	}
 	chunkedItems := chunkBy(items, ChunkSize)
 	for _, chunkedBatch := range chunkedItems {
@@ -48,21 +58,4 @@ func (t *Client) BatchWriteItems(ctx context.Context, input []map[string]types.A
 	}
 
 	return nil
-}
-
-func (t *Client) BatchPutItems(ctx context.Context, inputs []*BatchPutItemsInput) error {
-	items := make([]map[string]types.AttributeValue, len(inputs))
-	for idx, in := range inputs {
-		item, err := attributevalue.MarshalMap(in.Item)
-		if err != nil {
-			return fmt.Errorf("failed to marshall item; %s", err)
-		}
-
-		for k, v := range t.NewKeys(in.PartitionKeyValue, in.SortKeyValue) {
-			item[k] = v
-		}
-		items[idx] = item
-	}
-
-	return t.BatchWriteItems(ctx, items)
 }
