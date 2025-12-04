@@ -2,30 +2,48 @@ package dynago
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 const ChunkSize = 25
 
-/**
-* Used to update records to  dynamodb
-* @param input slice of record want to  put to DB
-* @return error
- */
+type BatchPutItemsInput struct {
+	PartitionKeyValue Attribute
+	SortKeyValue      Attribute
+	Item              any
+}
 
-func (t *Client) BatchWriteItems(ctx context.Context, input []map[string]types.AttributeValue) error {
-	items := make([]types.WriteRequest, 0, len(input))
+/**
+ * BatchPutItems writes multiple items to DynamoDB in batches.
+ * Items are automatically chunked into groups of 25 (DynamoDB's batch limit).
+ * Each item is marshaled and partition/sort keys are added before writing.
+ * @param ctx context for the operation
+ * @param inputs slice of items to put into DynamoDB
+ * @return error if operation fails
+ */
+func (t *Client) BatchPutItems(ctx context.Context, inputs []BatchPutItemsInput) error {
+	items := make([]types.WriteRequest, 0, len(inputs))
 	table := t.TableName
-	for _, model := range input {
-		items = append(items,
-			types.WriteRequest{
-				PutRequest: &types.PutRequest{
-					Item: model,
-				},
+
+	for _, input := range inputs {
+		item, err := attributevalue.MarshalMap(input.Item)
+		if err != nil {
+			return fmt.Errorf("failed to marshall item; %s", err)
+		}
+
+		for k, v := range t.NewKeys(input.PartitionKeyValue, input.SortKeyValue) {
+			item[k] = v
+		}
+
+		items = append(items, types.WriteRequest{
+			PutRequest: &types.PutRequest{
+				Item: item,
 			},
-		)
+		})
 	}
 	chunkedItems := chunkBy(items, ChunkSize)
 	for _, chunkedBatch := range chunkedItems {
@@ -40,5 +58,4 @@ func (t *Client) BatchWriteItems(ctx context.Context, input []map[string]types.A
 	}
 
 	return nil
-
 }
