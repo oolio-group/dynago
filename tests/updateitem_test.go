@@ -14,7 +14,7 @@ import (
 func TestUpdateItem(t *testing.T) {
 	ddbClient := prepareTable(t)
 
-	partitionKey := "org_123#" + rand.Text() // avoid interference with other tests that may be running in parallel
+	partitionKey := "org_123#" + rand.Text() // avoid interference with other tests
 
 	testCases := []struct {
 		name                          string
@@ -143,6 +143,8 @@ func TestUpdateItem(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			// t.Parallel() // commented out: DO NOT RUN THE TESTS IN PARALLEL, because they depend on each other (e.g., one test creates an item that another test updates)
+
 			gotResponse, gotErr := ddbClient.UpdateItem(context.TODO(), tc.givePk, tc.giveSk, tc.giveUpdateExpr, tc.giveExpressionAttributeValues, tc.giveOptions...)
 
 			if tc.wantErrStr != "" {
