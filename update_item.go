@@ -70,7 +70,9 @@ func (t *Client) UpdateItem(
 	// Apply option functions
 	if len(opts) > 0 {
 		for _, opt := range opts {
-			opt(input)
+			if err := opt(input); err != nil {
+				return nil, err
+			}
 		}
 	}
 

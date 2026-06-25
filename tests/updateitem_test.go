@@ -21,7 +21,6 @@ func TestUpdateItem(t *testing.T) {
 		givePk                        dynago.Attribute
 		giveSk                        dynago.Attribute
 		giveUpdateExpr                *string
-		giveExpressionAttributeNames  map[string]*string
 		giveExpressionAttributeValues map[string]ddbtypes.AttributeValue
 		giveOptions                   []dynago.UpdateOption
 		wantAttributes                map[string]ddbtypes.AttributeValue
@@ -167,6 +166,7 @@ func TestUpdateItem(t *testing.T) {
 					gotResponseValue := gotResponse.Attributes[key]
 					if gotResponseValue == nil {
 						t.Errorf("attribute %q not found in response", key)
+						continue
 					}
 
 					switch v := gotResponseValue.(type) {
