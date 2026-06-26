@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
@@ -28,6 +29,7 @@ type WriteAPI interface {
 	DeleteItem(ctx context.Context, pk, sk string) error
 	BatchDeleteItems(ctx context.Context, input []AttributeRecord) []AttributeRecord
 	BatchPutItems(ctx context.Context, items []BatchPutItemsInput) error
+	UpdateItem(ctx context.Context, pk Attribute, sk Attribute, updateExpression *string, expressionAttributeValues map[string]types.AttributeValue, opts ...UpdateOption) (*dynamodb.UpdateItemOutput, error)
 }
 
 type TransactionAPI interface {

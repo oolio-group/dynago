@@ -133,6 +133,26 @@ func AddBalance(ctx context.Context, acc LedgerAccount, amount int) (err error) 
 }
 ```
 
+
+
+
+### UpdateItem
+
+```go
+err := table.UpdateItem(
+  context.TODO(),
+  dynago.StringValue("partitionKey"),
+  dynago.StringValue("sortKey"),
+  aws.String("ADD Income :increment"),
+  map[string]ddbtypes.AttributeValue{
+    ":increment": &ddbtypes.AttributeValueMemberN{Value: "1"},
+  },
+  []dynago.UpdateOption{
+    dynago.WithReturnValues("ALL_NEW"),
+  },
+)
+```
+
 ### Query
 
 ```go
