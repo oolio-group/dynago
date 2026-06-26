@@ -28,6 +28,7 @@ type WriteAPI interface {
 	DeleteItem(ctx context.Context, pk, sk string) error
 	BatchDeleteItems(ctx context.Context, input []AttributeRecord) []AttributeRecord
 	BatchPutItems(ctx context.Context, items []BatchPutItemsInput) error
+	UpdateItem(ctx context.Context, pk Attribute, sk Attribute, updateExpression *string, expressionAttributeValues map[string]types.AttributeValue, opts ...UpdateOption) (*dynamodb.UpdateItemOutput, error)
 }
 
 type TransactionAPI interface {
