@@ -44,6 +44,30 @@ func (t *Client) WithPutItem(pk string, sk string, item interface{}) types.Trans
 
 }
 
+func (t *Client) WithUpdateItem(pk string, sk string, fields interface{}) types.TransactWriteItem {
+	// Generate update expression from fields
+	updateExpr, attrValues, attrNames, err := t.generateUpdateExpression(fields)
+	if err != nil {
+		log.Printf("Failed to generate update expression: %s", err.Error())
+		return types.TransactWriteItem{}
+	}
+	
+	if updateExpr == "" {
+		log.Println("No fields to update")
+		return types.TransactWriteItem{}
+	}
+	
+	return types.TransactWriteItem{
+		Update: &types.Update{
+			TableName:                 &t.TableName,
+			Key:                       t.NewKeys(StringValue(pk), StringValue(sk)),
+			UpdateExpression:          &updateExpr,
+			ExpressionAttributeValues: attrValues,
+			ExpressionAttributeNames:  attrNames,
+		},
+	}
+}
+
 // TransactItems is a synchronous for writing or deletion operation performed in dynamodb grouped together
 
 func (t *Client) TransactItems(ctx context.Context, input ...types.TransactWriteItem) error {
