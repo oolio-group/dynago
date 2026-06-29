@@ -8,17 +8,30 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
+type GetItemInput = dynamodb.GetItemInput
+
+// Function Struct for providing option input params for GetItem
+type GetItemOptions func(g *dynamodb.GetItemInput)
+
 /*
 Used to get a db record from dynamodb given a partition key and sort key
 @param partitionKey the partition key of the record
 @param sortKey the sort key of the record
 @param result the result of the query written to given memory reference
+@param opts optional GetItemOptions for configuring the request
 @return error, true if the record was found, false otherwise
 */
-func (t *Client) GetItem(ctx context.Context, pk Attribute, sk Attribute, out interface{}) (err error, found bool) {
+func (t *Client) GetItem(ctx context.Context, pk Attribute, sk Attribute, out interface{}, opts ...GetItemOptions) (err error, found bool) {
 	input := &dynamodb.GetItemInput{
 		TableName: &t.TableName,
 		Key:       t.NewKeys(pk, sk),
+	}
+
+	// Apply optional function parameters
+	if len(opts) > 0 {
+		for _, opt := range opts {
+			opt(input)
+		}
 	}
 
 	resp, err := t.client.GetItem(ctx, input)
